@@ -1,146 +1,57 @@
-use actix_web::{
-    get, post, App, HttpResponse, HttpServer, Responder
-};
-use langchain_rust::{
-    language_models::llm::LLM,
-    llm::{
-        claude::Claude, ollama::client::Ollama, openai::OpenAI, OpenAIConfig
-    }
-};
-use dotenv::dotenv;
+use reqwest;
+use serde::{Deserialize, Serialize};
+use tokio;
 use std::env;
-use serde_json::json;
 
+mod models;
 
+use models::User;
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello, world!")
+#[derive(Serialize)]
+struct GenerateRequest {
+    model: String,
+    prompt: String,
+    stream: bool,
 }
 
-#[post("/chat_claude")]
-async fn chat_claude(prompt: String) -> impl Responder {
-    dotenv().ok();
-    let api_key = env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY must be set");
+#[derive(Deserialize, Debug)]
+struct GenerateResponse {
+    response: Option<String>,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create an HTTP client
+    let client = reqwest::Client::new();
+
+    // Get API endpoint and model name from environment variable or use default
+    let api_endpoint = env::var("OLLAMA_API_ENDPOINT")
+        .unwrap_or_else(|_| "http://localhost:11434/api/generate".to_string());
+    let model_name = env::var("OLLAMA_MODEL")
+        .unwrap_or_else(|_| "llama3.2".to_string());
+
+    // Prepare the request payload
+    let request = GenerateRequest {
+        model: env::var("OLLAMA_MODEL").unwrap_or_else(|_| model_name),
+        prompt: "I would like to lose weight and gain muscle mass. What would you recommend?".to_string(),
+        stream: false,
+    };
+
+    // Send POST request to Ollama API
+    let response = client
+        .post(&api_endpoint)
+        .json(&request)
+        .send()
+        .await?;
+
+    // Parse and print the response
+    let result: GenerateResponse = response.json().await?;
     
-    let llm = Claude::default().with_api_key(api_key);
-    
-    let response = llm.invoke(&prompt).await;   
-
-
-    match response {
-        Ok(response) => {
-            HttpResponse::Ok().json(json!({ "response": response }))
-        },
-        Err(e) => {
-            HttpResponse::InternalServerError().json(json!({ "error": format!("LLM generation failed: {e}") }))
-        }
-    }
-}
-
-#[post("/chat_gpt")]
-async fn chat_gpt(prompt: String) -> impl Responder {
-    let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-    let open_ai = OpenAI::default().with_config(
-        OpenAIConfig::default()
-            .with_api_key(api_key),
-    );
-
-    let response = open_ai.invoke(&prompt).await;
-    
-    match response {
-        Ok(response) => {
-            HttpResponse::Ok().json(json!({ "response": response }))
-        },
-        Err(e) => {
-            HttpResponse::InternalServerError().json(json!({ "error": format!("LLM generation failed: {}", e) }))
-        }
-    }
-}
-
-#[post("/chat_ollama")]
-async fn chat_ollama(prompt: String) -> impl Responder {
-    let ollama = Ollama::default().with_model("llama3.2");
-    let response = ollama.invoke(&prompt).await;
-
-    match response {
-        Ok(response) => {
-            HttpResponse::Ok().json(json!({ "response": response }))
-        },
-        Err(e) => {
-            HttpResponse::InternalServerError().json(json!({ "error": format!("LLM generation failed: {}", e) }))
-        }
-    }
-}
-
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    
-    HttpServer::new(|| {
-        App::new()
-            .service(hello)
-            .service(chat_claude)
-            .service(chat_gpt)
-            .service(chat_ollama)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use actix_web::test;
-    use serde_json::Value;
-
-    #[actix_web::test]
-    async fn test_hello_endpoint() {
-        let app = test::init_service(App::new().service(hello)).await;
-        let req = test::TestRequest::get().uri("/").to_request();
-        let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
-        let body = test::read_body(resp).await;
-        assert_eq!(body, "Hello, world!");
+    if let Some(response_text) = &result.response {
+        println!("Response: {}", response_text);
+    } else {
+        println!("No response field in the API result");
     }
 
-    #[actix_web::test]
-    async fn test_chat_claude_endpoint() {
-        let app = test::init_service(App::new().service(chat_claude)).await;
-        let req = test::TestRequest::post()
-            .uri("/chat_claude")
-            .set_payload("Test prompt")
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
-        let body: Value = test::read_body_json(resp).await;
-        assert!(body.get("response").is_some());
-    }
-
-    #[actix_web::test]
-    async fn test_chat_gpt_endpoint() {
-        let app = test::init_service(App::new().service(chat_gpt)).await;
-        let req = test::TestRequest::post()
-            .uri("/chat_gpt")
-            .set_payload("Test prompt")
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
-        let body: Value = test::read_body_json(resp).await;
-        assert!(body.get("response").is_some());
-    }
-
-    #[actix_web::test]
-    async fn test_chat_ollama_endpoint() {
-        let app = test::init_service(App::new().service(chat_ollama)).await;
-        let req = test::TestRequest::post()
-            .uri("/chat_ollama")
-            .set_payload("Test prompt")
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
-        let body: Value = test::read_body_json(resp).await;
-        assert!(body.get("response").is_some());
-    }
+    Ok(())
 }

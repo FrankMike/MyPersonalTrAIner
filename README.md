@@ -118,3 +118,15 @@ For each body part there is a different exercise, in some cases exercises work m
     - Mountain climbers
     - Jumping jacks
     - Kettlebell swings
+
+
+## Install Ollama (on macOS or Linux)
+curl https://ollama.ai/install.sh | sh
+
+## Pull a model (e.g., Llama 2)
+ollama pull llama2
+
+## Use environment varibles
+Fox example: 
+OLLAMA_API_ENDPOINT="http://localhost:11434/api/generate"
+OLLAMA_MODEL="llama3.2"
