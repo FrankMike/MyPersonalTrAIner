@@ -1,7 +1,11 @@
 # MyPersonalTrAIner
 
-MyPersonalTrAIner is an automated system that, according to the user physical characteristics and the help of modern LLMs (Large Language Models) such as OpenAI ChatGPT or Anthropic Claude, helps to achieve fitness goals as the user requests.
+MyPersonalTrAIner is an automated system that, according to the user's physical characteristics and the help of modern LLMs (Large Language Models) such as OpenAI ChatGPT or Anthropic Claude, helps to achieve fitness goals as the user requests.
 
+
+#  ---- DISCLAIMER ----
+
+MyPersonalTrAIner is NOT a qualified personal trainer, is just a little experiment with ollama and local LLMs. Always check with professional personal trainer for training advice and diets.
 
 ## Fitness Goals
 
