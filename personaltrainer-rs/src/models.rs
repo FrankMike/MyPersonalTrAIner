@@ -1,4 +1,4 @@
-use crate::utils::get_user_input;
+// use crate::utils::get_user_input;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -13,14 +13,14 @@ pub struct User {
     pub physical_limitations: String,
     pub time_available: f32,
     pub equipment: String,
-    pub fitness_goal: FitnessGoal,
+    pub fitness_goals: Vec<FitnessGoal>,
 }
 
 
 #[allow(dead_code)]
 impl User {
-    pub fn new(name: String, surname: String, age: u8, height: f32, weight: f32, gender: Gender, fitness_level: FitnessLevel, physical_limitations: String, time_available: f32, equipment: String, fitness_goal: FitnessGoal) -> Self {
-        User { name, surname, age, height, weight, gender, fitness_level, physical_limitations, time_available, equipment, fitness_goal }
+    pub fn new(name: String, surname: String, age: u8, height: f32, weight: f32, gender: Gender, fitness_level: FitnessLevel, physical_limitations: String, time_available: f32, equipment: String, fitness_goals: Vec<FitnessGoal>) -> Self {
+        User { name, surname, age, height, weight, gender, fitness_level, physical_limitations, time_available, equipment, fitness_goals }
     }
 
     pub fn to_string(&self) -> String {
@@ -84,10 +84,7 @@ impl FitnessGoal {
             FitnessGoal::Endurance => "endurance".to_string(),
             FitnessGoal::Flexibility => "flexibility".to_string(),
             FitnessGoal::Balance => "balance".to_string(),
-            FitnessGoal::Other => {
-                let user_input = get_user_input("Please specify your fitness goal not included in the list: ");
-                user_input
-            },
+            FitnessGoal::Other => "other".to_string(),
         }
     }
 }

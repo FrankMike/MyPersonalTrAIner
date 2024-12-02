@@ -25,6 +25,43 @@ struct GenerateResponse {
 }
 
 
+fn get_fitness_goals() -> Vec<FitnessGoal> {
+    let mut goals = Vec::new();
+    
+    loop {
+        println!("\nSelect your fitness goals (enter numbers separated by spaces, e.g. '1 3 4'):");
+        println!("1. Weight loss");
+        println!("2. Muscle gain");
+        println!("3. Endurance");
+        println!("4. Flexibility");
+        println!("5. Balance");
+        println!("6. Other");
+        
+        let input = get_user_input("Enter number(s) (1-6): ");
+        
+        // Split the input string and parse each number
+        for num in input.split_whitespace() {
+            match num {
+                "1" => goals.push(FitnessGoal::WeightLoss),
+                "2" => goals.push(FitnessGoal::MuscleGain),
+                "3" => goals.push(FitnessGoal::Endurance),
+                "4" => goals.push(FitnessGoal::Flexibility),
+                "5" => goals.push(FitnessGoal::Balance),
+                "6" => goals.push(FitnessGoal::Other),
+                _ => continue,
+            }
+        }
+        
+        if !goals.is_empty() {
+            break;
+        } else {
+            println!("Please select at least one valid goal.");
+        }
+    }
+    
+    goals
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
@@ -68,23 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let physical_limitations = get_user_input("Enter any physical limitations (or press Enter if none): ");
     let time_available = get_user_input("How many hours per week can you dedicate to exercise? ").parse::<f32>().unwrap_or(3.0);
     let equipment = get_user_input("What equipment do you have access to? (press Enter if none) ");
-    // let fitness_goal = get_user_input("What is your fitness goal? (press Enter if none)");
-    let fitness_goal = match get_user_input("\n
-    1. Weight loss
-    2. Muscle gain
-    3. Endurance
-    4. Flexibility
-    5. Balance
-    6. Other
-    Enter number (1-6): ").as_str() {
-        "1" => FitnessGoal::WeightLoss,
-        "2" => FitnessGoal::MuscleGain,
-        "3" => FitnessGoal::Endurance,
-        "4" => FitnessGoal::Flexibility,
-        "5" => FitnessGoal::Balance,
-        "6" => FitnessGoal::Other,
-        _ => FitnessGoal::Other,
-    };
+    let fitness_goals = get_fitness_goals();
     
 
     let user = User::new(
@@ -98,8 +119,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         physical_limitations,
         time_available,
         equipment,
-        fitness_goal,
+        fitness_goals,
     );
+
+    let goals_string = user.fitness_goals.iter()
+        .map(|g| g.to_string())
+        .collect::<Vec<String>>()
+        .join(", ");
 
     let user_prompt = format!("I want you to act as a personal trainer. 
     I will provide you with all the information needed about me, because I am looking to become fitter, 
@@ -108,8 +134,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     You should use your knowledge of exercise science, nutrition advice, 
     and other relevant factors in order to create a plan suitable for me. 
     My name is {} {}, I'm {} years old, {}cm tall, I weights {}kg. 
-    My fitness level is {}. I have {} as a physical limitations, {} hours a week available, and {} equipment.", 
-    user.name, user.surname, user.age, user.height, user.weight, user.fitness_level.to_string(), user.physical_limitations, user.time_available, user.equipment);
+    My fitness level is {}. I have {} as a physical limitations, {} hours a week available, {} equipment, 
+    and my fitness goals are: {}.", 
+    user.name, user.surname, user.age, user.height, user.weight, 
+    user.fitness_level.to_string(), user.physical_limitations, 
+    user.time_available, user.equipment, goals_string);
 
 
     // Prepare the request payload
