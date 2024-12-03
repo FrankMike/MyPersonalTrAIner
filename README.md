@@ -35,7 +35,7 @@ This application:
 - Processes data locally on your device
 - May have limitations in accuracy and completeness of information
 
-## Recommended Professional Resources
+## Recommended Professional Resources
 
 For proper fitness and nutrition guidance, please consult:
 
